@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loan Approval AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <div class="eyebrow">AI / MACHINE LEARNING</div>
+    <h1>Loan Approval AI</h1>
+    <p>Intelligent loan application analysis dashboard</p>
+  </div>
+  <div class="badge">RANDOM FOREST • 200 TREES</div>
+</header>
+
+<nav class="nav">
+  <a href="#dashboard">Dashboard</a>
+  <a href="#prediction">Prediction</a>
+  <a href="#analytics">Analytics</a>
+  <a href="#model">About Model</a>
+</nav>
+
+<main>
+<section id="dashboard" class="section">
+  <div class="section-title">
+    <div>
+      <span class="eyebrow">OVERVIEW</span>
+      <h2>Model & Dataset Dashboard</h2>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card"><span>Dataset Rows</span><strong>{{ dataset_stats.rows }}</strong><small>training records available</small></div>
+    <div class="card"><span>Input Features</span><strong>{{ dataset_stats.features }}</strong><small>used by the model</small></div>
+    <div class="card"><span>Model Accuracy</span><strong>{{ metrics.accuracy }}%</strong><small>held-out test set</small></div>
+    <div class="card"><span>Approved</span><strong>{{ approval_counts.approved }}</strong><small>historical records</small></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h3>Approval Distribution</h3>
+      <div class="bar-row">
+        <div class="bar-label"><span>Approved</span><b>{{ approval_counts.approved }}</b></div>
+        <div class="bar"><i style="width: {{ (approval_counts.approved / dataset_stats.rows * 100)|round(1) }}%"></i></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label"><span>Rejected</span><b>{{ approval_counts.rejected }}</b></div>
+        <div class="bar"><i style="width: {{ (approval_counts.rejected / dataset_stats.rows * 100)|round(1) }}%"></i></div>
+      </div>
+      <p class="muted">The model learns patterns from both approved and rejected historical applications.</p>
+    </div>
+
+    <div class="panel">
+      <h3>Evaluation</h3>
+      <div class="metric-grid">
+        <div><span>Accuracy</span><b>{{ metrics.accuracy }}%</b></div>
+        <div><span>Precision</span><b>{{ metrics.precision }}%</b></div>
+        <div><span>Recall</span><b>{{ metrics.recall }}%</b></div>
+        <div><span>F1 Score</span><b>{{ metrics.f1 }}%</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="prediction" class="section">
+  <div class="section-title">
+    <div>
+      <span class="eyebrow">PREDICT</span>
+      <h2>Analyze a New Loan Application</h2>
+      <p>Enter applicant information and let the trained ML model estimate the approval outcome.</p>
+    </div>
+  </div>
+
+  <div class="panel form-panel">
+    <form id="predictionForm">
+      <div class="form-grid">
+        <label>Gender
+          <select name="Gender" required><option>Male</option><option>Female</option></select>
+        </label>
+        <label>Married
+          <select name="Married" required><option>Yes</option><option>No</option></select>
+        </label>
+        <label>Dependents
+          <select name="Dependents" required><option>0</option><option>1</option><option>2</option><option>3+</option></select>
+        </label>
+        <label>Education
+          <select name="Education" required><option>Graduate</option><option>Not Graduate</option></select>
+        </label>
+        <label>Self Employed
+          <select name="Self_Employed" required><option>No</option><option>Yes</option></select>
+        </label>
+        <label>Property Area
+          <select name="Property_Area" required><option>Urban</option><option>Semiurban</option><option>Rural</option></select>
+        </label>
+
+        <label>Applicant Income (₹ / month)
+          <input type="number" name="Applicant_Income" min="0" value="55000" required>
+        </label>
+        <label>Co-applicant Income (₹ / month)
+          <input type="number" name="Coapplicant_Income" min="0" value="25000" required>
+        </label>
+        <label>Loan Amount (₹ thousand)
+          <input type="number" name="Loan_Amount" min="1" value="180" required>
+        </label>
+        <label>Loan Term (months)
+          <select name="Loan_Amount_Term" required><option>120</option><option>180</option><option>240</option><option>300</option><option selected>360</option><option>480</option></select>
+        </label>
+        <label>Credit Score
+          <input type="number" name="Credit_Score" min="300" max="850" value="720" required>
+        </label>
+        <label>Existing Loans
+          <input type="number" name="Existing_Loans" min="0" max="10" value="1" required>
+        </label>
+        <label>Savings (₹)
+          <input type="number" name="Savings" min="0" value="350000" required>
+        </label>
+      </div>
+
+      <button class="primary" type="submit">Predict Loan Approval</button>
+    </form>
+
+    <div id="result" class="result hidden">
+      <div class="result-icon" id="resultIcon">✓</div>
+      <div>
+        <span class="eyebrow">AI RESULT</span>
+        <h2 id="resultLabel">LOAN APPROVED</h2>
+        <p id="resultMessage"></p>
+      </div>
+      <div class="probability">
+        <div class="prob-head"><span>Approval probability</span><b id="approvalPct">0%</b></div>
+        <div class="bar large"><i id="approvalBar"></i></div>
+        <div class="prob-head"><span>Rejection probability</span><b id="rejectionPct">0%</b></div>
+        <div class="bar large"><i id="rejectionBar"></i></div>
+        <span class="risk" id="risk">LOW RISK</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="analytics" class="section">
+  <div class="section-title">
+    <div>
+      <span class="eyebrow">ANALYTICS</span>
+      <h2>What the Model Learns From</h2>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h3>Feature Importance</h3>
+      {% for item in feature_importance %}
+      <div class="importance">
+        <div><span>{{ item.feature }}</span><b>{{ item.importance }}%</b></div>
+        <div class="bar"><i style="width: {{ [item.importance * 4, 100]|min }}%"></i></div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="panel">
+      <h3>Dataset Health</h3>
+      <div class="health-row"><span>Total records</span><b>{{ dataset_stats.rows }}</b></div>
+      <div class="health-row"><span>Total columns</span><b>{{ dataset_stats.columns }}</b></div>
+      <div class="health-row"><span>Missing cells handled</span><b>{{ dataset_stats.missing_cells }}</b></div>
+      <div class="health-row"><span>Training records</span><b>{{ dataset_stats.training_rows }}</b></div>
+      <div class="health-row"><span>Testing records</span><b>{{ dataset_stats.testing_rows }}</b></div>
+    </div>
+  </div>
+</section>
+
+<section id="model" class="section">
+  <div class="section-title">
+    <div>
+      <span class="eyebrow">ABOUT MODEL</span>
+      <h2>Machine Learning Pipeline</h2>
+    </div>
+  </div>
+  <div class="pipeline">
+    <div><b>01</b><strong>CSV Dataset</strong><span>Historical loan applications</span></div>
+    <div><b>02</b><strong>Preprocessing</strong><span>Imputation + one-hot encoding</span></div>
+    <div><b>03</b><strong>Random Forest</strong><span>200 estimators, max depth 10</span></div>
+    <div><b>04</b><strong>Prediction</strong><span>Approved / Not Approved + probability</span></div>
+  </div>
+  <div class="note">
+    <strong>Academic project note:</strong> This model is a demonstration of supervised machine learning.
+    It should not be used as the sole basis for a real lending decision.
+  </div>
+</section>
+</main>
+
+<footer>
+  Loan Approval AI • Mini Project • Built with Python, Flask, Pandas & Scikit-learn
+</footer>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
